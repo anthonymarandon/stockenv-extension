@@ -10,7 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - SVG icons now use explicit foreground color (`var(--fg)`) so they remain visible across all VS Code themes (light, dark, high contrast)
 
 ### Changed
-- README screenshots replaced with updated images covering all major views: full privacy, keys only, full reveal, add section dialog, text editor, and raw file
+- README now showcases six screenshots, one per view:
+  1. Full privacy — keys and values masked
+  2. Keys only — keys visible, values masked
+  3. Full reveal — keys and values visible
+  4. Add a section — section name input dialog
+  5. Text editor — integrated text view with masking
+  6. Raw file — VS Code native text editor
 - Removed "Reveal values only" and "Per-row reveal" showcase sections from README, replaced with "Add a section", "Text editor view", and "Raw file" sections
 
 ## [0.0.7] - 2026-03-12
