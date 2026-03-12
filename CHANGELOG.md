@@ -4,6 +4,14 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.0.9] - 2026-03-12
+
+### Changed
+- Message handler refactored from `if` chain to `else if` for clearer control flow
+
+### Fixed
+- Added explicit parentheses to an ambiguous operator-precedence condition in the `edit` message handler
+
 ## [0.0.8] - 2026-03-12
 
 ### Fixed

@@ -119,7 +119,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel.webview.onDidReceiveMessage(async (msg) => {
       if (msg.type === "edit") {
         const lineIndex = parseInt(msg.lineIndex);
-        if (isNaN(lineIndex) || msg.field !== "key" && msg.field !== "value") return;
+        if (isNaN(lineIndex) || (msg.field !== "key" && msg.field !== "value")) return;
         if (typeof msg.value !== "string") return;
 
         const lines = parseEnv(document.getText());
@@ -142,7 +142,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "addRow") {
+      else if (msg.type === "addRow") {
         const edit = new vscode.WorkspaceEdit();
         const lastLine = document.lineAt(document.lineCount - 1);
         const insertPos = lastLine.range.end;
@@ -151,17 +151,17 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "save") {
+      else if (msg.type === "save") {
         await document.save();
       }
 
-      if (msg.type === "openAsText") {
+      else if (msg.type === "openAsText") {
         await vscode.commands.executeCommand(
           "workbench.action.reopenTextEditor"
         );
       }
 
-      if (msg.type === "deleteRow") {
+      else if (msg.type === "deleteRow") {
         const delIndex = parseInt(msg.lineIndex);
         if (isNaN(delIndex)) return;
         const lines = parseEnv(document.getText());
@@ -176,7 +176,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "addSection") {
+      else if (msg.type === "addSection") {
         const name = await vscode.window.showInputBox({
           prompt: "Section name",
           placeHolder: "e.g. Database, API Keys, AWS…",
@@ -199,7 +199,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "addRowToSection") {
+      else if (msg.type === "addRowToSection") {
         const sectionIndex = parseInt(msg.sectionIndex);
         if (isNaN(sectionIndex)) return;
         const lines = parseEnv(document.getText());
@@ -226,7 +226,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "moveToSection") {
+      else if (msg.type === "moveToSection") {
         const fromIndex = parseInt(msg.fromIndex);
         const sectionIndex = parseInt(msg.sectionIndex);
         if (isNaN(fromIndex) || isNaN(sectionIndex)) return;
@@ -272,7 +272,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "moveMultipleToSection") {
+      else if (msg.type === "moveMultipleToSection") {
         const indices: number[] = (msg.indices as number[]).map(Number).filter((n: number) => !isNaN(n));
         const sectionIndex = parseInt(msg.sectionIndex);
         if (indices.length === 0 || isNaN(sectionIndex)) return;
@@ -310,7 +310,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "moveSectionUp" || msg.type === "moveSectionDown") {
+      else if (msg.type === "moveSectionUp" || msg.type === "moveSectionDown") {
         const sectionIndex = parseInt(msg.sectionIndex);
         if (isNaN(sectionIndex)) return;
         const lines = parseEnv(document.getText());
@@ -344,7 +344,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      if (msg.type === "editComment") {
+      else if (msg.type === "editComment") {
         const lineIndex = parseInt(msg.lineIndex);
         if (isNaN(lineIndex)) return;
         if (typeof msg.value !== "string") return;
