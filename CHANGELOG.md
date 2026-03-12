@@ -4,6 +4,12 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.0.10] - 2026-03-12
+
+### Changed
+- All screenshots cropped to editor zone only (sidebar, dock, and title bar removed)
+- Screenshots styled with rounded corners, drop shadow, and macOS-style gradient background using ImageMagick
+
 ## [0.0.9] - 2026-03-12
 
 ### Changed
