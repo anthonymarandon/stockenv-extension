@@ -2,7 +2,7 @@
   "name": "stockenv",
   "displayName": "StockEnv",
   "description": "View and protect .env files as a table with per-column masking. Hide keys and values independently, reveal individual rows, edit inline.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "AnthonyDev18",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,7 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
+    "Formatters",
     "Visualization"
   ],
   "keywords": [
