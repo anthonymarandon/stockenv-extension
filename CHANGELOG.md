@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.4] - 2026
+
 ### Added
 - Toggle button in toolbar to switch from table view to the standard text editor
 - Command "StockEnv: Open as Table" in the command palette to switch back to table view
