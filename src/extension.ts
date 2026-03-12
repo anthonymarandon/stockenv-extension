@@ -13,6 +13,7 @@ const IC_EYE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stro
 const IC_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
 const IC_FILE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/></svg>';
 const IC_TABLE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>';
+const IC_COPY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
 const IC_FILE_TEXT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
 const IC_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 const IC_SAVE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>';
@@ -142,13 +143,38 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         await vscode.workspace.applyEdit(edit);
       }
 
-      else if (msg.type === "addRow") {
-        const edit = new vscode.WorkspaceEdit();
-        const lastLine = document.lineAt(document.lineCount - 1);
-        const insertPos = lastLine.range.end;
-        const prefix = lastLine.text.trim() === "" ? "" : "\n";
-        edit.insert(document.uri, insertPos, `${prefix}NEW_KEY="value"`);
-        await vscode.workspace.applyEdit(edit);
+      else if (msg.type === "addRow" || msg.type === "addRowTop") {
+        const key = await vscode.window.showInputBox({
+          prompt: "Variable name",
+          placeHolder: "e.g. DATABASE_URL, API_KEY…",
+          validateInput: (v) => v.trim() === "" ? "Key cannot be empty" : undefined,
+        });
+        if (!key) return;
+        const normalizedKey = key.trim().toUpperCase();
+        const value = await vscode.window.showInputBox({
+          prompt: `Value for ${normalizedKey}`,
+          placeHolder: "Enter the value",
+        });
+        if (value === undefined) return;
+
+        if (msg.type === "addRowTop") {
+          const lines = parseEnv(document.getText());
+          lines.splice(0, 0, { type: "pair", key: normalizedKey, value, quoteChar: '"' });
+          const edit = new vscode.WorkspaceEdit();
+          edit.replace(
+            document.uri,
+            new vscode.Range(0, 0, document.lineCount, 0),
+            serializeEnv(lines)
+          );
+          await vscode.workspace.applyEdit(edit);
+        } else {
+          const edit = new vscode.WorkspaceEdit();
+          const lastLine = document.lineAt(document.lineCount - 1);
+          const insertPos = lastLine.range.end;
+          const prefix = lastLine.text.trim() === "" ? "" : "\n";
+          edit.insert(document.uri, insertPos, `${prefix}${normalizedKey}="${value}"`);
+          await vscode.workspace.applyEdit(edit);
+        }
       }
 
       else if (msg.type === "save") {
@@ -174,6 +200,40 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           serializeEnv(lines)
         );
         await vscode.workspace.applyEdit(edit);
+      }
+
+      else if (msg.type === "deleteMultiple") {
+        const indices: number[] = (msg.indices || []).map(Number).filter((n: number) => !isNaN(n));
+        if (indices.length === 0) return;
+        const lines = parseEnv(document.getText());
+        // Remove from highest index first to preserve ordering
+        const sorted = [...indices].sort((a, b) => b - a);
+        for (const idx of sorted) {
+          if (idx >= 0 && idx < lines.length) {
+            lines.splice(idx, 1);
+          }
+        }
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(
+          document.uri,
+          new vscode.Range(0, 0, document.lineCount, 0),
+          serializeEnv(lines)
+        );
+        await vscode.workspace.applyEdit(edit);
+      }
+
+      else if (msg.type === "copyField") {
+        const idx = parseInt(msg.lineIndex);
+        if (isNaN(idx)) return;
+        const lines = parseEnv(document.getText());
+        if (idx < 0 || idx >= lines.length) return;
+        const line = lines[idx];
+        if (line.type !== "pair") return;
+        const pair = line as EnvEntry;
+        const text = msg.field === "key" ? pair.key
+          : msg.field === "value" ? pair.value
+          : `${pair.key}="${pair.value}"`;
+        await vscode.env.clipboard.writeText(text);
       }
 
       else if (msg.type === "addSection") {
@@ -202,6 +262,18 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       else if (msg.type === "addRowToSection") {
         const sectionIndex = parseInt(msg.sectionIndex);
         if (isNaN(sectionIndex)) return;
+        const key = await vscode.window.showInputBox({
+          prompt: "Variable name",
+          placeHolder: "e.g. DATABASE_URL, API_KEY…",
+          validateInput: (v) => v.trim() === "" ? "Key cannot be empty" : undefined,
+        });
+        if (!key) return;
+        const normalizedKey = key.trim().toUpperCase();
+        const value = await vscode.window.showInputBox({
+          prompt: `Value for ${normalizedKey}`,
+          placeHolder: "Enter the value",
+        });
+        if (value === undefined) return;
         const lines = parseEnv(document.getText());
         if (sectionIndex < 0 || sectionIndex >= lines.length) return;
         // Find insertion point: last pair before next section header or EOF
@@ -216,7 +288,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             break;
           }
         }
-        lines.splice(insertAt, 0, { type: "pair", key: "NEW_KEY", value: "value", quoteChar: '"' });
+        lines.splice(insertAt, 0, { type: "pair", key: normalizedKey, value, quoteChar: '"' });
         const edit = new vscode.WorkspaceEdit();
         edit.replace(
           document.uri,
@@ -411,6 +483,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             </button>
           </td>
           <td class="cell-actions">
+            <button class="btn-copy" data-index="${i}" title="Copy">${IC_COPY}</button>
             <button class="btn-move" data-index="${i}" title="Move to section">${IC_EDIT}</button>
             <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
           </td>
@@ -448,6 +521,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             <button class="btn-reveal" data-index="${i}" title="Reveal this value">
               <span class="reveal-icon">${IC_LOCK}</span>
             </button>
+            <button class="btn-copy" data-index="${i}" title="Copy">${IC_COPY}</button>
             <button class="btn-move" data-index="${i}" title="Move to section">${IC_EDIT}</button>
             <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
           </span>
@@ -494,9 +568,21 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     gap: 10px;
     margin-bottom: 16px;
     padding: 8px 12px;
-    background: var(--header-bg);
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .toolbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -17px;
+    height: 17px;
+    background: var(--bg);
   }
 
   .toggle-btn {
@@ -577,14 +663,14 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   thead th {
-    background: var(--header-bg);
+    background: var(--bg);
     padding: 10px 12px;
     text-align: left;
     border-bottom: 2px solid var(--border);
     font-weight: 600;
     position: sticky;
-    top: 0;
-    z-index: 1;
+    top: var(--thead-top, 0px);
+    z-index: 5;
     user-select: none;
   }
 
@@ -597,9 +683,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   td {
     padding: 7px 12px;
     border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+  td.cell-key, td.cell-value {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    white-space: normal;
   }
 
   tr:hover:not(.comment-row) { background: var(--hover); }
@@ -731,9 +819,22 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     background: var(--accent);
     color: var(--btn-fg);
     border-radius: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-size: 12px;
     font-family: inherit;
+    position: sticky;
+    top: var(--toolbar-height, 0px);
+    z-index: 9;
+  }
+  .selection-bar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -9px;
+    height: 9px;
+    background: var(--bg);
+    pointer-events: none;
   }
   .selection-bar.visible { display: flex; }
   .selection-bar .sel-count { font-weight: 600; }
@@ -752,6 +853,21 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     transition: all 0.15s;
   }
   .selection-bar .sel-btn:hover { background: rgba(255,255,255,0.25); }
+  .selection-bar .sel-btn-delete {
+    background: rgba(255,60,60,0.25);
+    border-color: rgba(255,60,60,0.5);
+  }
+  .selection-bar .sel-btn-delete:hover { background: rgba(255,60,60,0.4); }
+  .selection-bar .sel-btn-confirm {
+    background: var(--vscode-errorForeground, #f44);
+    border-color: var(--vscode-errorForeground, #f44);
+    color: #fff;
+    animation: pulse-confirm 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-confirm {
+    from { opacity: 0.85; }
+    to { opacity: 1; }
+  }
   .selection-bar .sel-btn-cancel {
     background: transparent;
     border-color: rgba(255,255,255,0.2);
@@ -841,6 +957,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   body.values-hidden tr.row-revealed .real-value { display: inline; }
   body.values-hidden tr.row-revealed .masked-value { display: none; }
   body.values-hidden tr.row-revealed .cell-value { pointer-events: auto; }
+  body.keys-hidden tr.row-revealed .cell-key {
+    color: var(--fg);
+    text-shadow: none;
+    pointer-events: auto;
+  }
 
   /* ── Reveal button ── */
   .cell-reveal { text-align: center; }
@@ -874,6 +995,108 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   }
   tr:hover .btn-delete { opacity: 1; }
   .btn-delete:hover { transform: scale(1.2); }
+  .btn-delete.confirming {
+    opacity: 1 !important;
+    background: var(--vscode-errorForeground, #f44);
+    color: #fff;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    transform: none;
+    animation: pulse-confirm 0.6s ease-in-out infinite alternate;
+  }
+
+  /* ── Copy button ── */
+  .btn-copy {
+    background: none;
+    border: none;
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    padding: 2px 4px;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    position: relative;
+  }
+  tr:hover .btn-copy { opacity: 1; }
+  .btn-copy:hover { transform: scale(1.15); color: var(--accent); }
+
+  /* ── Copy dropdown ── */
+  .copy-dropdown {
+    display: none;
+    position: fixed;
+    background: var(--header-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-width: 140px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .copy-dropdown.visible { display: block; }
+  .copy-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .copy-dropdown-item:hover { background: var(--hover); }
+
+  /* ── Copy toast ── */
+  .copy-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #000;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .copy-toast.visible { opacity: 1; }
+
+  /* ── Add variable dropdown ── */
+  .add-var-dropdown {
+    display: none;
+    position: fixed;
+    background: var(--header-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-width: 200px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .add-var-dropdown.visible { display: block; }
+  .add-var-dropdown-title {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--vscode-editorLineNumber-foreground, #858585);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .add-var-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .add-var-dropdown-item:hover { background: var(--hover); }
+  .add-var-dropdown-item .section-icon { opacity: 0.6; }
 
   /* ── Text View ── */
   .text-view { display: none; }
@@ -921,6 +1144,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   body.values-hidden .text-line.row-revealed .real-value { display: inline; }
   body.values-hidden .text-line.row-revealed .masked-value { display: none; }
   body.values-hidden .text-line.row-revealed .text-value { pointer-events: auto; }
+  body.keys-hidden .text-line.row-revealed .text-key {
+    color: var(--fg);
+    text-shadow: none;
+    pointer-events: auto;
+  }
 
   .text-comment {
     color: var(--vscode-editorLineNumber-foreground, #858585);
@@ -958,6 +1186,17 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     font-size: 14px;
   }
   .text-line .btn-delete:hover { transform: scale(1.2); }
+  .text-line .btn-delete.confirming {
+    background: var(--vscode-errorForeground, #f44);
+    color: #fff;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    transform: none;
+    animation: pulse-confirm 0.6s ease-in-out infinite alternate;
+  }
 
   .text-line .btn-move {
     background: none;
@@ -969,6 +1208,18 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     align-items: center;
   }
   .text-line .btn-move:hover { transform: scale(1.15); }
+
+  .text-line .btn-copy {
+    background: none;
+    border: none;
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .text-line .btn-copy:hover { transform: scale(1.15); color: var(--accent); }
 
   /* ── Text view sections ── */
   .section-line {
@@ -1027,6 +1278,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   <div class="selection-bar" id="selectionBar">
     <span class="sel-count" id="selCount">0 selected</span>
     <button class="sel-btn" id="selMove">${IC_EDIT} Move to section</button>
+    <button class="sel-btn sel-btn-delete" id="selDelete">${IC_TRASH} Delete</button>
     <button class="sel-btn sel-btn-cancel" id="selClear">Deselect all</button>
   </div>
 
@@ -1050,6 +1302,13 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   </div>
 
   <div class="move-dropdown" id="moveDropdown"></div>
+  <div class="add-var-dropdown" id="addVarDropdown"></div>
+  <div class="copy-dropdown" id="copyDropdown">
+    <div class="copy-dropdown-item" data-copy="key">Copy key</div>
+    <div class="copy-dropdown-item" data-copy="value">Copy value</div>
+    <div class="copy-dropdown-item" data-copy="both">Copy key and value</div>
+  </div>
+  <div class="copy-toast" id="copyToast">Copied!</div>
 
 <script>
   const vscode = acquireVsCodeApi();
@@ -1159,6 +1418,16 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       cell.setAttribute("spellcheck", "false");
 
       cell.addEventListener("focus", () => {
+        // Block editing if cell is masked
+        const row = cell.closest("tr, .text-line");
+        const idx = parseInt(cell.dataset.index);
+        const isRevealed = row && row.classList.contains("row-revealed");
+        const field = cell.dataset.field;
+        const keysHidden = document.body.classList.contains("keys-hidden");
+        const valuesHidden = document.body.classList.contains("values-hidden");
+        if (field === "key" && keysHidden && !isRevealed) { cell.blur(); return; }
+        if (field === "value" && valuesHidden && !isRevealed) { cell.blur(); return; }
+
         // When editing value, work with real-value span
         if (cell.dataset.field === "value") {
           const realSpan = cell.querySelector(".real-value");
@@ -1181,7 +1450,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           const realSpan = cell.querySelector(".real-value");
           value = realSpan ? realSpan.textContent : cell.textContent;
         } else {
-          value = cell.textContent;
+          value = cell.textContent.toUpperCase();
+          cell.textContent = value;
         }
         vscode.postMessage({ type: "edit", lineIndex: index, field, value });
       });
@@ -1196,11 +1466,65 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   // ── Delete ──
   function bindDeleteButtons() {
     document.querySelectorAll(".btn-delete").forEach(btn => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!btn.classList.contains("confirming")) {
+          // Reset any other confirming button first
+          document.querySelectorAll(".btn-delete.confirming").forEach(b => {
+            b.classList.remove("confirming");
+            b.innerHTML = IC_TRASH;
+            b.title = "Delete";
+          });
+          btn.classList.add("confirming");
+          btn.innerHTML = "Confirm?";
+          btn.title = "Click again to confirm deletion";
+          return;
+        }
+        btn.classList.remove("confirming");
         vscode.postMessage({ type: "deleteRow", lineIndex: parseInt(btn.dataset.index) });
       });
     });
   }
+
+  // ── Copy buttons ──
+  let copyTargetIndex = -1;
+  const copyDropdown = document.getElementById("copyDropdown");
+  const copyToast = document.getElementById("copyToast");
+
+  function showCopyToast(label) {
+    copyToast.textContent = label + " copied!";
+    copyToast.classList.add("visible");
+    setTimeout(() => copyToast.classList.remove("visible"), 1200);
+  }
+
+  function bindCopyButtons() {
+    document.querySelectorAll(".btn-copy").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        copyTargetIndex = parseInt(btn.dataset.index);
+        const rect = btn.getBoundingClientRect();
+        copyDropdown.classList.add("visible");
+        const dw = copyDropdown.offsetWidth;
+        const dh = copyDropdown.offsetHeight;
+        let left = rect.right - dw;
+        if (left < 8) left = 8;
+        if (left + dw > window.innerWidth - 8) left = window.innerWidth - dw - 8;
+        let top = rect.bottom + 4;
+        if (top + dh > window.innerHeight - 8) top = rect.top - dh - 4;
+        copyDropdown.style.top = top + "px";
+        copyDropdown.style.left = left + "px";
+      });
+    });
+  }
+
+  copyDropdown.querySelectorAll(".copy-dropdown-item").forEach(item => {
+    item.addEventListener("click", () => {
+      const field = item.dataset.copy;
+      vscode.postMessage({ type: "copyField", lineIndex: copyTargetIndex, field: field });
+      copyDropdown.classList.remove("visible");
+      showCopyToast(field === "key" ? "Key" : field === "value" ? "Value" : "Key and value");
+    });
+  });
 
   // ── Section add buttons ──
   function bindSectionAddButtons() {
@@ -1261,6 +1585,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     } else {
       bar.classList.remove("visible");
     }
+    syncToolbarHeight();
   }
 
   function clearSelection() {
@@ -1270,6 +1595,26 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     updateSelectionBar();
   }
 
+  const selDeleteBtn = document.getElementById("selDelete");
+  let selDeleteConfirm = false;
+  selDeleteBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (selectedRows.size === 0) return;
+    if (!selDeleteConfirm) {
+      selDeleteConfirm = true;
+      selDeleteBtn.innerHTML = IC_TRASH + " Confirm?";
+      selDeleteBtn.classList.add("sel-btn-confirm");
+      return;
+    }
+    vscode.postMessage({ type: "deleteMultiple", indices: [...selectedRows] });
+    resetSelDeleteBtn();
+    clearSelection();
+  });
+  function resetSelDeleteBtn() {
+    selDeleteConfirm = false;
+    selDeleteBtn.innerHTML = IC_TRASH + " Delete";
+    selDeleteBtn.classList.remove("sel-btn-confirm");
+  }
   document.getElementById("selClear").addEventListener("click", clearSelection);
   document.getElementById("selMove").addEventListener("click", (e) => {
     e.stopPropagation();
@@ -1351,11 +1696,28 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     });
   }
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   document.addEventListener("click", (e) => {
     const dropdown = document.getElementById("moveDropdown");
     if (!e.target.closest(".btn-move") && !e.target.closest(".move-dropdown") && !e.target.closest(".sel-btn")) {
       dropdown.classList.remove("visible");
+    }
+    if (!e.target.closest(".btn-copy") && !e.target.closest(".copy-dropdown")) {
+      copyDropdown.classList.remove("visible");
+    }
+    if (!e.target.closest("#addRow") && !e.target.closest(".add-var-dropdown")) {
+      document.getElementById("addVarDropdown").classList.remove("visible");
+    }
+    // Reset delete confirmations on outside click
+    if (!e.target.closest("#selDelete")) {
+      resetSelDeleteBtn();
+    }
+    if (!e.target.closest(".btn-delete")) {
+      document.querySelectorAll(".btn-delete.confirming").forEach(b => {
+        b.classList.remove("confirming");
+        b.innerHTML = IC_TRASH;
+        b.title = "Delete";
+      });
     }
   });
 
@@ -1364,9 +1726,58 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     vscode.postMessage({ type: "addSection" });
   });
 
-  // ── Add row ──
-  document.getElementById("addRow").addEventListener("click", () => {
-    vscode.postMessage({ type: "addRow" });
+  // ── Add row (with section picker) ──
+  document.getElementById("addRow").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const btn = document.getElementById("addRow");
+    const dropdown = document.getElementById("addVarDropdown");
+    const sections = [];
+    document.querySelectorAll(".section-name").forEach(el => {
+      sections.push({
+        index: parseInt(el.dataset.index),
+        name: el.textContent.replace(/^#\\s*/, "")
+      });
+    });
+    // Also check text view sections
+    if (sections.length === 0) {
+      document.querySelectorAll(".text-section-name").forEach(el => {
+        sections.push({
+          index: parseInt(el.dataset.index),
+          name: el.textContent.replace(/^#\\s*/, "")
+        });
+      });
+    }
+
+    let html = '<div class="add-var-dropdown-title">Add variable to</div>';
+    html += '<div class="add-var-dropdown-item" data-section="top"><span class="section-icon">' + IC_UP + '</span> Top of file</div>';
+    sections.forEach(s => {
+      html += \`<div class="add-var-dropdown-item" data-section="\${s.index}"><span class="section-icon">#</span> \${esc(s.name)}</div>\`;
+    });
+    dropdown.innerHTML = html;
+
+    const rect = btn.getBoundingClientRect();
+    dropdown.classList.add("visible");
+    const dw = dropdown.offsetWidth;
+    const dh = dropdown.offsetHeight;
+    let left = rect.left;
+    if (left + dw > window.innerWidth - 8) left = window.innerWidth - dw - 8;
+    if (left < 8) left = 8;
+    let top = rect.bottom + 4;
+    if (top + dh > window.innerHeight - 8) top = rect.top - dh - 4;
+    dropdown.style.top = top + "px";
+    dropdown.style.left = left + "px";
+
+    dropdown.querySelectorAll(".add-var-dropdown-item").forEach(item => {
+      item.addEventListener("click", () => {
+        const section = item.dataset.section;
+        if (section === "top") {
+          vscode.postMessage({ type: "addRowTop" });
+        } else {
+          vscode.postMessage({ type: "addRowToSection", sectionIndex: parseInt(section) });
+        }
+        dropdown.classList.remove("visible");
+      });
+    });
   });
 
   // ── Switch view mode ──
@@ -1410,9 +1821,27 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   bindSectionAddButtons();
   bindCommentEdit();
   bindMoveButtons();
+  bindCopyButtons();
   bindCheckboxes();
   bindSectionReorder();
   updateRevealIcons();
+
+  // ── Sync toolbar height for sticky thead ──
+  function syncToolbarHeight() {
+    const tb = document.querySelector(".toolbar");
+    const sb = document.getElementById("selectionBar");
+    if (tb) {
+      const tbH = tb.getBoundingClientRect().height + parseFloat(getComputedStyle(tb).marginBottom || "0");
+      document.documentElement.style.setProperty("--toolbar-height", tbH + "px");
+      let theadTop = tbH;
+      if (sb && sb.classList.contains("visible")) {
+        theadTop += sb.getBoundingClientRect().height + parseFloat(getComputedStyle(sb).marginBottom || "0");
+      }
+      document.documentElement.style.setProperty("--thead-top", theadTop + "px");
+    }
+  }
+  syncToolbarHeight();
+  window.addEventListener("resize", syncToolbarHeight);
 
   // ── Handle updates from extension ──
   window.addEventListener("message", (event) => {
@@ -1420,6 +1849,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     if (msg.type === "update") {
       selectedRows.clear();
       updateSelectionBar();
+      revealedRows.clear();
 
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = msg.lines.map((line, i) => {
@@ -1459,6 +1889,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             </button>
           </td>
           <td class="cell-actions">
+            <button class="btn-copy" data-index="\${i}" title="Copy">${IC_COPY}</button>
             <button class="btn-move" data-index="\${i}" title="Move to section">\${IC_EDIT}</button>
             <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
           </td>
@@ -1496,6 +1927,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             <button class="btn-reveal" data-index="\${i}" title="Reveal this value">
               <span class="reveal-icon">${IC_LOCK}</span>
             </button>
+            <button class="btn-copy" data-index="\${i}" title="Copy">${IC_COPY}</button>
             <button class="btn-move" data-index="\${i}" title="Move to section">\${IC_EDIT}</button>
             <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
           </span>
@@ -1508,6 +1940,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       bindSectionAddButtons();
       bindCommentEdit();
       bindMoveButtons();
+      bindCopyButtons();
       bindCheckboxes();
       bindSectionReorder();
       updateRevealIcons();

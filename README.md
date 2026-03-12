@@ -32,19 +32,69 @@ Click both toggle buttons to show keys and values. All lock icons switch to unlo
 
 ---
 
+## Per-row reveal
+
+Click the lock icon on any row to reveal that specific key and value while keeping all others masked. No need to unmask the entire file.
+
+![Per-row reveal with lock icon](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/4.png)
+
+---
+
+## Copy key, value, or both
+
+Click the copy icon on any row to open a dropdown with three options: **Copy key**, **Copy value**, or **Copy key and value**. Values are copied without surrounding quotes. When copying both, the format is `KEY="value"`.
+
+![Copy dropdown — key, value, or both](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/5.png)
+
+---
+
 ## Add a section
 
 Click **+ Add Section** in the toolbar to create a new section. A dialog appears where you can type the section name, then press **Enter** to confirm or **Escape** to cancel.
 
-![Add Section dialog](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/4.png)
+![Add Section dialog](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/6.png)
+
+---
+
+## Move & reorganize
+
+Select one or more variables with checkboxes, then click **Move to section** to relocate them. You can also hover a single row and click the pen icon to move just that variable. Section headers have up/down chevrons to reorder entire sections.
+
+![Move to section dropdown](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/7.png)
+
+---
+
+## Add a variable to any section
+
+Click **+ Add Variable** in the toolbar to choose where to insert the new variable: at the top of the file or inside any existing section.
+
+![Add Variable with section picker](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/8.png)
+
+---
+
+## Guided variable creation
+
+After choosing the target section, two dialogs appear in sequence: first the variable name, then its value. Keys are automatically converted to UPPERCASE.
+
+![Enter variable name](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/9.png)
+
+![Enter variable value](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/10.png)
+
+---
+
+## Inline editing
+
+Click on any visible key or value to edit it directly in the table. Press **Enter** to confirm, **Escape** to cancel. Keys are automatically converted to UPPERCASE. Masked cells cannot be edited — reveal them first.
+
+![Inline editing of keys and values](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/11.png)
 
 ---
 
 ## Text editor view
 
-Click **Text Editor** in the toolbar to switch to an integrated text view. Variables are displayed as `KEY=VALUE` lines. All masking features remain active: key blurring, value masking, per-row reveal, add, delete, and save.
+Click **Text Editor** in the toolbar to switch to an integrated text view. Variables are displayed as `KEY=VALUE` lines. All masking features remain active: key blurring, value masking, per-row reveal, copy, add, delete, and save.
 
-![Text editor view](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/5.png)
+![Text editor view](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/12.png)
 
 ---
 
@@ -52,7 +102,7 @@ Click **Text Editor** in the toolbar to switch to an integrated text view. Varia
 
 Click **Raw File** to open the `.env` file in VS Code's native text editor, bypassing the extension entirely. When you reopen the file later, the custom editor view is restored automatically.
 
-![Raw file in VS Code native editor](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/6.png)
+![Raw file in VS Code native editor](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/13.png)
 
 ---
 
@@ -75,10 +125,16 @@ Two buttons in the toolbar let you control visibility independently:
 | **Values** | `Values masked` (dots) | `Values visible` |
 
 ### Per-row reveal
-Click the lock icon on any row to unmask only that value while keeping all others hidden.
+Click the lock icon on any row to unmask that key and value while keeping all others hidden.
+
+### Copy to clipboard
+Click the copy icon on any row to choose between:
+- **Copy key** — copies the variable name
+- **Copy value** — copies the raw value without quotes
+- **Copy key and value** — copies in `KEY="value"` format
 
 ### Inline editing
-Click on any key or value cell to edit it directly in the table. Press **Enter** to confirm, **Escape** to cancel.
+Click on any visible key or value cell to edit it directly. Press **Enter** to confirm, **Escape** to cancel. Keys are automatically converted to UPPERCASE. Masked cells are protected — you must reveal them before editing.
 
 Surrounding quotes (`"` or `'`) are stripped from the display and restored automatically when saving. You edit the actual value, not the syntax.
 
@@ -90,16 +146,20 @@ Comments starting with `#` are detected as section headers. They appear with an 
 - Section names are editable inline — click to rename, press **Enter** to confirm
 - Hover a section header to reveal **up/down chevrons** to reorder sections
 
+### Add variable with section picker
+Click **+ Add Variable** in the toolbar to choose where to insert the new variable: at the top of the file or inside any existing section. Two dialogs then prompt for the key name and value. Keys are automatically converted to UPPERCASE.
+
 ### Multi-select & move
 Each variable row has a checkbox. Select one or more variables, then use the **Move to section** button in the selection bar to move them all at once. You can also hover a single row and click the pen icon to move just that variable. Works in both table and text views.
 
-### Add & Delete
-- **+ Add Variable** creates a new row at the end of the file
-- **+** on a section header adds a variable inside that section
-- Hover a row to reveal the **x** button to delete it
+### Bulk delete
+Select one or more variables with checkboxes, then click **Delete** in the selection bar. A confirmation step prevents accidental deletions — the button turns red and asks "Confirm?" before proceeding. Individual rows also have a delete button with the same confirmation behavior.
+
+### Sticky toolbar
+The toolbar, selection bar, and column headers all remain visible when scrolling through long files.
 
 ### Switch between views
-A **Text Editor** button in the toolbar lets you switch to an integrated text view that displays the `.env` content as plain `KEY=VALUE` lines. All masking features remain active in both views: key blurring, value masking, per-row reveal, add, delete, and save. Click **Table View** to switch back.
+A **Text Editor** button in the toolbar lets you switch to an integrated text view that displays the `.env` content as plain `KEY=VALUE` lines. All masking features remain active in both views: key blurring, value masking, per-row reveal, copy, add, delete, and save. Click **Table View** to switch back.
 
 A **Raw File** button opens the file in VS Code's native text editor, bypassing the extension entirely. When you reopen the file later, the custom editor view is restored automatically.
 
@@ -128,13 +188,15 @@ StockEnv activates on all files matching these patterns:
 1. Install StockEnv from the VS Code Marketplace
 2. Open any `.env` file — the table view opens automatically
 3. Use the toolbar buttons to show/hide keys and values
-4. Click the lock icon per row to reveal individual values
-5. Edit cells directly by clicking on them
-6. Click **Save** to write changes to disk
+4. Click the lock icon per row to reveal individual keys and values
+5. Click the copy icon to copy a key, value, or both to the clipboard
+6. Edit cells directly by clicking on them (reveal first if masked)
+7. Use **+ Add Variable** to create a new variable in a specific section
+8. Click **Save** to write changes to disk
 
 To switch between views:
-- **Table → Text**: click the **Text Editor** button in the toolbar
-- **Text → Table**: click the **Table View** button in the toolbar
+- **Table -> Text**: click the **Text Editor** button in the toolbar
+- **Text -> Table**: click the **Table View** button in the toolbar
 - **Raw file**: click the **Raw File** button to open in VS Code's default editor
 
 ---
@@ -146,6 +208,7 @@ To switch between views:
 - **No file access** — the webview cannot read any file beyond the opened document
 - **Input validation** — all messages between the webview and extension are type-checked and bounds-verified
 - **XSS protection** — all user content is escaped before rendering
+- **Edit protection** — masked cells cannot be edited until revealed
 
 ---
 

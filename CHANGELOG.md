@@ -4,6 +4,30 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0] - 2026-03-12
+
+### Added
+- **Copy to clipboard** — copy icon on each row with dropdown: Copy key, Copy value, Copy key and value (format `KEY="value"`)
+- **Add variable with section picker** — "Add Variable" button now shows a dropdown to choose target section (or top of file)
+- **Guided variable creation** — two-step input dialogs (key name, then value) when adding a variable
+- **Automatic UPPERCASE keys** — keys are automatically converted to uppercase on creation and inline editing
+- **Bulk delete** — delete button in the selection bar to remove multiple selected variables at once
+- **Delete confirmation** — all delete actions (individual and bulk) require a two-click confirmation to prevent accidents
+- **Edit protection** — masked cells cannot be edited until revealed via the lock icon
+
+### Fixed
+- Per-row reveal now also reveals the key (previously only the value was unmasked)
+- Long values are no longer truncated in the table — cells now wrap instead of using ellipsis
+- Sticky toolbar — the toolbar, selection bar, and column headers all remain visible when scrolling
+- No content bleeds through the sticky headers (opaque backgrounds with gap coverage)
+- Selection bar is now sticky and properly positioned between toolbar and column headers
+- Revealed rows are correctly reset when sections are reordered or variables are moved (no stale index bug)
+- Copy and add-variable dropdowns are correctly repositioned when near viewport edges
+
+### Changed
+- README updated with 13 annotated screenshots covering all features
+- Version bumped to 1.0.0
+
 ## [0.0.10] - 2026-03-12
 
 ### Changed
