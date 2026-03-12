@@ -6,6 +6,7 @@ interface EnvEntry {
   type: "pair";
   key: string;
   value: string;
+  quoteChar: string; // "", "'", or '"'
 }
 
 interface EnvComment {
@@ -14,6 +15,20 @@ interface EnvComment {
 }
 
 type EnvLine = EnvEntry | EnvComment;
+
+function stripQuotes(raw: string): { value: string; quoteChar: string } {
+  const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return {
+      value: trimmed.substring(1, trimmed.length - 1),
+      quoteChar: trimmed[0],
+    };
+  }
+  return { value: raw, quoteChar: "" };
+}
 
 function parseEnv(text: string): EnvLine[] {
   return text.split("\n").map((raw) => {
@@ -28,11 +43,9 @@ function parseEnv(text: string): EnvLine[] {
     if (eqIndex === -1) {
       return { type: "comment", raw };
     }
-    return {
-      type: "pair",
-      key: raw.substring(0, eqIndex).trim(),
-      value: raw.substring(eqIndex + 1),
-    };
+    const rawValue = raw.substring(eqIndex + 1);
+    const { value, quoteChar } = stripQuotes(rawValue);
+    return { type: "pair", key: raw.substring(0, eqIndex).trim(), value, quoteChar };
   });
 }
 
@@ -40,7 +53,8 @@ function serializeEnv(lines: EnvLine[]): string {
   return lines
     .map((l) => {
       if (l.type === "pair") {
-        return `${l.key}=${l.value}`;
+        const q = l.quoteChar;
+        return `${l.key}=${q}${l.value}${q}`;
       }
       return l.raw;
     })
@@ -63,14 +77,16 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    webviewPanel.webview.options = { enableScripts: true };
+    webviewPanel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [],
+    };
 
     const updateWebview = () => {
       const lines = parseEnv(document.getText());
-      webviewPanel.webview.html = this.getHtml(webviewPanel.webview, lines);
+      webviewPanel.webview.html = this.getHtml(lines);
     };
 
-    // Sync: document → webview
     const docChangeSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
@@ -84,11 +100,15 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.onDidDispose(() => docChangeSubscription.dispose());
 
-    // Sync: webview → document
     webviewPanel.webview.onDidReceiveMessage(async (msg) => {
       if (msg.type === "edit") {
+        const lineIndex = parseInt(msg.lineIndex);
+        if (isNaN(lineIndex) || msg.field !== "key" && msg.field !== "value") return;
+        if (typeof msg.value !== "string") return;
+
         const lines = parseEnv(document.getText());
-        const entry = lines[msg.lineIndex];
+        if (lineIndex < 0 || lineIndex >= lines.length) return;
+        const entry = lines[lineIndex];
         if (!entry || entry.type !== "pair") return;
 
         if (msg.field === "key") {
@@ -111,14 +131,20 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         const lastLine = document.lineAt(document.lineCount - 1);
         const insertPos = lastLine.range.end;
         const prefix = lastLine.text.trim() === "" ? "" : "\n";
-        edit.insert(document.uri, insertPos, `${prefix}NEW_KEY=value`);
+        edit.insert(document.uri, insertPos, `${prefix}NEW_KEY="value"`);
         await vscode.workspace.applyEdit(edit);
       }
 
+      if (msg.type === "save") {
+        await document.save();
+      }
+
       if (msg.type === "deleteRow") {
+        const delIndex = parseInt(msg.lineIndex);
+        if (isNaN(delIndex)) return;
         const lines = parseEnv(document.getText());
-        if (msg.lineIndex < 0 || msg.lineIndex >= lines.length) return;
-        lines.splice(msg.lineIndex, 1);
+        if (delIndex < 0 || delIndex >= lines.length) return;
+        lines.splice(delIndex, 1);
         const edit = new vscode.WorkspaceEdit();
         edit.replace(
           document.uri,
@@ -132,12 +158,12 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     updateWebview();
   }
 
-  private getHtml(webview: vscode.Webview, lines: EnvLine[]): string {
+  private getHtml(lines: EnvLine[]): string {
     const rows = lines
       .map((line, i) => {
         if (line.type === "comment" || line.type === "blank") {
           return `<tr class="comment-row" data-index="${i}">
-            <td colspan="3" class="comment">${escapeHtml(line.raw)}</td>
+            <td colspan="4" class="comment">${escapeHtml(line.raw)}</td>
           </tr>`;
         }
         const pair = line as EnvEntry;
@@ -146,6 +172,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           <td class="cell-value" data-field="value" data-index="${i}">
             <span class="real-value">${escapeHtml(pair.value)}</span>
             <span class="masked-value">${MASK}</span>
+          </td>
+          <td class="cell-reveal">
+            <button class="btn-reveal" data-index="${i}" title="Reveal this value">
+              <span class="reveal-icon">&#x1F512;</span>
+            </button>
           </td>
           <td class="cell-actions">
             <button class="btn-delete" data-index="${i}" title="Delete">&#x2715;</button>
@@ -159,6 +190,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
 <style>
   :root {
     --bg: var(--vscode-editor-background);
@@ -171,7 +203,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     --btn-bg: var(--vscode-button-background, #0e639c);
     --btn-fg: var(--vscode-button-foreground, #fff);
     --input-bg: var(--vscode-input-background, #3c3c3c);
-    --input-border: var(--vscode-input-border, #555);
+    --success: var(--vscode-testing-iconPassed, #73c991);
+    --warning: var(--vscode-editorWarning-foreground, #cca700);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -181,43 +214,87 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     color: var(--fg);
     font-family: var(--vscode-editor-font-family, monospace);
     font-size: var(--vscode-editor-font-size, 13px);
-    padding: 12px;
+    padding: 16px;
   }
 
+  /* ── Toolbar ── */
   .toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--header-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
   }
 
   .toggle-btn {
-    background: var(--header-bg);
+    background: transparent;
     color: var(--fg);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 4px 10px;
+    padding: 6px 14px;
     cursor: pointer;
     font-size: 12px;
+    font-family: inherit;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    transition: all 0.15s;
   }
-  .toggle-btn:hover { border-color: var(--accent); }
-  .toggle-btn .icon { font-size: 14px; }
+  .toggle-btn:hover { border-color: var(--accent); background: var(--hover); }
+
+  .toggle-btn.active {
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .toggle-btn.hidden-state {
+    border-color: var(--warning);
+    color: var(--warning);
+  }
+
+  .toggle-btn .icon { font-size: 15px; }
+  .toggle-btn .label { font-weight: 500; }
+
+  .separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
 
   .add-btn {
     background: var(--btn-bg);
     color: var(--btn-fg);
     border: none;
     border-radius: 4px;
-    padding: 4px 12px;
+    padding: 6px 14px;
     cursor: pointer;
     font-size: 12px;
+    font-family: inherit;
     margin-left: auto;
   }
   .add-btn:hover { opacity: 0.9; }
 
+  .save-btn {
+    background: var(--success);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+  .save-btn.saved {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* ── Table ── */
   table {
     width: 100%;
     border-collapse: collapse;
@@ -226,7 +303,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
 
   thead th {
     background: var(--header-bg);
-    padding: 8px 12px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 2px solid var(--border);
     font-weight: 600;
@@ -236,12 +313,13 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     user-select: none;
   }
 
-  th.col-key { width: 35%; }
-  th.col-value { width: 55%; }
+  th.col-key { width: 30%; }
+  th.col-value { width: 50%; }
+  th.col-reveal { width: 10%; text-align: center; }
   th.col-actions { width: 10%; text-align: center; }
 
   td {
-    padding: 6px 12px;
+    padding: 7px 12px;
     border-bottom: 1px solid var(--border);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -255,6 +333,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     font-style: italic;
   }
 
+  /* ── Cells ── */
   .cell-key, .cell-value {
     cursor: text;
     position: relative;
@@ -272,15 +351,42 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     letter-spacing: 2px;
   }
 
+  /* ── Keys blur ── */
   body.keys-hidden .cell-key {
     color: transparent;
     text-shadow: 0 0 8px var(--fg);
     pointer-events: none;
   }
 
+  /* ── Values global mask ── */
   body.values-hidden .real-value { display: none; }
   body.values-hidden .masked-value { display: inline; }
   body.values-hidden .cell-value { pointer-events: none; }
+
+  /* ── Per-row revealed (overrides global mask) ── */
+  body.values-hidden tr.row-revealed .real-value { display: inline; }
+  body.values-hidden tr.row-revealed .masked-value { display: none; }
+  body.values-hidden tr.row-revealed .cell-value { pointer-events: auto; }
+
+  /* ── Reveal button ── */
+  .cell-reveal { text-align: center; }
+
+  .btn-reveal {
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .btn-reveal:hover { border-color: var(--accent); background: var(--hover); }
+
+  tr.row-revealed .btn-reveal { border-color: var(--success); }
+  tr.row-revealed .reveal-icon::after { content: ""; }
+
+  /* ── Delete button ── */
+  .cell-actions { text-align: center; }
 
   .btn-delete {
     background: none;
@@ -292,22 +398,23 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     transition: opacity 0.15s;
   }
   tr:hover .btn-delete { opacity: 1; }
-  .btn-delete:hover { opacity: 1; transform: scale(1.2); }
-
-  .cell-actions { text-align: center; }
+  .btn-delete:hover { transform: scale(1.2); }
 </style>
 </head>
-<body>
+<body class="keys-hidden values-hidden">
+
   <div class="toolbar">
-    <button class="toggle-btn" id="toggleKeys">
-      <span class="icon" id="keysIcon">&#x1F441;</span>
-      Keys
+    <button class="toggle-btn hidden-state" id="toggleKeys">
+      <span class="icon">&#x1F6AB;</span>
+      <span class="label" id="keysLabel">Keys masked</span>
     </button>
-    <button class="toggle-btn" id="toggleValues">
-      <span class="icon" id="valuesIcon">&#x1F441;</span>
-      Values
+    <div class="separator"></div>
+    <button class="toggle-btn hidden-state" id="toggleValues">
+      <span class="icon">&#x1F512;</span>
+      <span class="label" id="valuesLabel">Values masked</span>
     </button>
     <button class="add-btn" id="addRow">+ Add Variable</button>
+    <button class="save-btn" id="saveBtn">&#x1F4BE; Save</button>
   </div>
 
   <table>
@@ -315,6 +422,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       <tr>
         <th class="col-key">Key</th>
         <th class="col-value">Value</th>
+        <th class="col-reveal"></th>
         <th class="col-actions"></th>
       </tr>
     </thead>
@@ -326,99 +434,108 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
 <script>
   const vscode = acquireVsCodeApi();
 
-  let keysHidden = false;
+  let keysHidden = true;
   let valuesHidden = true;
+  const revealedRows = new Set();
 
-  // Apply initial state
-  document.body.classList.add("values-hidden");
-
+  // ── Toggle Keys ──
   document.getElementById("toggleKeys").addEventListener("click", () => {
     keysHidden = !keysHidden;
     document.body.classList.toggle("keys-hidden", keysHidden);
-    document.getElementById("keysIcon").textContent = keysHidden ? "\\u{1F441}\\u{200D}\\u{1F5E8}" : "\\u{1F441}";
-  });
-
-  document.getElementById("toggleValues").addEventListener("click", () => {
-    valuesHidden = !valuesHidden;
-    document.body.classList.toggle("values-hidden", valuesHidden);
-    document.getElementById("valuesIcon").textContent = valuesHidden ? "\\u{1F441}\\u{200D}\\u{1F5E8}" : "\\u{1F441}";
-  });
-
-  // Inline editing
-  document.querySelectorAll(".cell-key, .cell-value").forEach(cell => {
-    cell.setAttribute("contenteditable", "true");
-    cell.setAttribute("spellcheck", "false");
-
-    cell.addEventListener("blur", () => {
-      const field = cell.dataset.field;
-      const index = parseInt(cell.dataset.index);
-      let value;
-
-      if (field === "value") {
-        const realSpan = cell.querySelector(".real-value");
-        value = realSpan ? realSpan.textContent : cell.textContent;
-      } else {
-        value = cell.textContent;
-      }
-
-      vscode.postMessage({ type: "edit", lineIndex: index, field, value });
-    });
-
-    cell.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        cell.blur();
-      }
-      if (e.key === "Escape") {
-        cell.blur();
-      }
-    });
-  });
-
-  // Delete row
-  document.querySelectorAll(".btn-delete").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const index = parseInt(btn.dataset.index);
-      vscode.postMessage({ type: "deleteRow", lineIndex: index });
-    });
-  });
-
-  // Add row
-  document.getElementById("addRow").addEventListener("click", () => {
-    vscode.postMessage({ type: "addRow" });
-  });
-
-  // Handle updates from extension
-  window.addEventListener("message", (event) => {
-    const msg = event.data;
-    if (msg.type === "update") {
-      // Rebuild table rows
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = msg.lines.map((line, i) => {
-        if (line.type === "comment" || line.type === "blank") {
-          return \`<tr class="comment-row" data-index="\${i}">
-            <td colspan="3" class="comment">\${escapeHtml(line.raw)}</td>
-          </tr>\`;
-        }
-        return \`<tr data-index="\${i}">
-          <td class="cell-key" contenteditable="true" spellcheck="false" data-field="key" data-index="\${i}">\${escapeHtml(line.key)}</td>
-          <td class="cell-value" contenteditable="true" spellcheck="false" data-field="value" data-index="\${i}">
-            <span class="real-value">\${escapeHtml(line.value)}</span>
-            <span class="masked-value">${MASK}</span>
-          </td>
-          <td class="cell-actions">
-            <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
-          </td>
-        </tr>\`;
-      }).join("");
-
-      // Re-bind events
-      bindCellEvents();
+    const btn = document.getElementById("toggleKeys");
+    const label = document.getElementById("keysLabel");
+    const icon = btn.querySelector(".icon");
+    if (keysHidden) {
+      label.textContent = "Keys masked";
+      icon.innerHTML = "&#x1F6AB;";
+      btn.classList.remove("active");
+      btn.classList.add("hidden-state");
+    } else {
+      label.textContent = "Keys visible";
+      icon.innerHTML = "&#x1F441;";
+      btn.classList.remove("hidden-state");
+      btn.classList.add("active");
     }
   });
 
+  // ── Toggle Values (global) ──
+  document.getElementById("toggleValues").addEventListener("click", () => {
+    valuesHidden = !valuesHidden;
+    document.body.classList.toggle("values-hidden", valuesHidden);
+    // Reset per-row reveals
+    revealedRows.clear();
+    document.querySelectorAll("tr.row-revealed").forEach(tr => tr.classList.remove("row-revealed"));
+    updateRevealIcons();
+
+    const btn = document.getElementById("toggleValues");
+    const label = document.getElementById("valuesLabel");
+    const icon = btn.querySelector(".icon");
+    if (valuesHidden) {
+      label.textContent = "Values masked";
+      icon.innerHTML = "&#x1F512;";
+      btn.classList.remove("active");
+      btn.classList.add("hidden-state");
+    } else {
+      label.textContent = "Values visible";
+      icon.innerHTML = "&#x1F513;";
+      btn.classList.remove("hidden-state");
+      btn.classList.add("active");
+    }
+  });
+
+  function updateRevealIcons() {
+    document.querySelectorAll(".btn-reveal").forEach(btn => {
+      const idx = parseInt(btn.dataset.index);
+      const tr = btn.closest("tr");
+      const icon = btn.querySelector(".reveal-icon");
+      if (!valuesHidden || revealedRows.has(idx)) {
+        icon.innerHTML = "&#x1F513;";
+      } else {
+        icon.innerHTML = "&#x1F512;";
+      }
+    });
+  }
+
+  // ── Per-row reveal ──
+  function bindRevealButtons() {
+    document.querySelectorAll(".btn-reveal").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (!valuesHidden) return; // all visible already
+        const idx = parseInt(btn.dataset.index);
+        const tr = btn.closest("tr");
+        if (revealedRows.has(idx)) {
+          revealedRows.delete(idx);
+          tr.classList.remove("row-revealed");
+        } else {
+          revealedRows.add(idx);
+          tr.classList.add("row-revealed");
+        }
+        updateRevealIcons();
+      });
+    });
+  }
+
+  // ── Inline editing ──
   function bindCellEvents() {
     document.querySelectorAll(".cell-key, .cell-value").forEach(cell => {
+      cell.setAttribute("contenteditable", "true");
+      cell.setAttribute("spellcheck", "false");
+
+      cell.addEventListener("focus", () => {
+        // When editing value, work with real-value span
+        if (cell.dataset.field === "value") {
+          const realSpan = cell.querySelector(".real-value");
+          if (realSpan) {
+            // Select the text in the real-value span
+            const range = document.createRange();
+            range.selectNodeContents(realSpan);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+        }
+      });
+
       cell.addEventListener("blur", () => {
         const field = cell.dataset.field;
         const index = parseInt(cell.dataset.index);
@@ -431,11 +548,16 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         }
         vscode.postMessage({ type: "edit", lineIndex: index, field, value });
       });
+
       cell.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); cell.blur(); }
         if (e.key === "Escape") { cell.blur(); }
       });
     });
+  }
+
+  // ── Delete ──
+  function bindDeleteButtons() {
     document.querySelectorAll(".btn-delete").forEach(btn => {
       btn.addEventListener("click", () => {
         vscode.postMessage({ type: "deleteRow", lineIndex: parseInt(btn.dataset.index) });
@@ -443,10 +565,69 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     });
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+  // ── Add row ──
+  document.getElementById("addRow").addEventListener("click", () => {
+    vscode.postMessage({ type: "addRow" });
+  });
+
+  // ── Save ──
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.addEventListener("click", () => {
+    vscode.postMessage({ type: "save" });
+    saveBtn.textContent = "\\u2705 Saved";
+    saveBtn.classList.add("saved");
+    setTimeout(() => {
+      saveBtn.innerHTML = "&#x1F4BE; Save";
+      saveBtn.classList.remove("saved");
+    }, 1500);
+  });
+
+  // ── Initial bind ──
+  bindCellEvents();
+  bindRevealButtons();
+  bindDeleteButtons();
+  updateRevealIcons();
+
+  // ── Handle updates from extension ──
+  window.addEventListener("message", (event) => {
+    const msg = event.data;
+    if (msg.type === "update") {
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = msg.lines.map((line, i) => {
+        if (line.type === "comment" || line.type === "blank") {
+          return \`<tr class="comment-row" data-index="\${i}">
+            <td colspan="4" class="comment">\${esc(line.raw)}</td>
+          </tr>\`;
+        }
+        const revealed = revealedRows.has(i) ? "row-revealed" : "";
+        return \`<tr class="\${revealed}" data-index="\${i}">
+          <td class="cell-key" data-field="key" data-index="\${i}">\${esc(line.key)}</td>
+          <td class="cell-value" data-field="value" data-index="\${i}">
+            <span class="real-value">\${esc(line.value)}</span>
+            <span class="masked-value">${MASK}</span>
+          </td>
+          <td class="cell-reveal">
+            <button class="btn-reveal" data-index="\${i}" title="Toggle this value">
+              <span class="reveal-icon">&#x1F512;</span>
+            </button>
+          </td>
+          <td class="cell-actions">
+            <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
+          </td>
+        </tr>\`;
+      }).join("");
+
+      bindCellEvents();
+      bindRevealButtons();
+      bindDeleteButtons();
+      updateRevealIcons();
+    }
+  });
+
+  function esc(str) {
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
   }
 </script>
 </body>

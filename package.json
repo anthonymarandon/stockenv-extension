@@ -1,6 +1,6 @@
 {
-  "name": "envshield",
-  "displayName": "EnvShield",
+  "name": "stockenv",
+  "displayName": "StockEnv",
   "description": "View and protect .env files as a table with per-column masking",
   "version": "0.0.2",
   "publisher": "anthonymarandon",
