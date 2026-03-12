@@ -32,6 +32,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "envshield.openAsTable",
+        "title": "StockEnv: Open as Table"
+      }
+    ],
     "customEditors": [
       {
         "viewType": "envshield.envTable",

@@ -153,6 +153,10 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         );
         await vscode.workspace.applyEdit(edit);
       }
+
+      if (msg.type === "openAsText") {
+        await vscode.commands.executeCommand("workbench.action.reopenTextEditor");
+      }
     });
 
     updateWebview();
@@ -294,6 +298,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     pointer-events: none;
   }
 
+  .switch-btn {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   /* ── Table ── */
   table {
     width: 100%;
@@ -415,6 +424,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     </button>
     <button class="add-btn" id="addRow">+ Add Variable</button>
     <button class="save-btn" id="saveBtn">&#x1F4BE; Save</button>
+    <div class="separator"></div>
+    <button class="toggle-btn switch-btn" id="switchEditor" title="Switch to text editor">
+      <span class="icon">&#x1F4DD;</span>
+      <span class="label">Text Editor</span>
+    </button>
   </div>
 
   <table>
@@ -570,6 +584,11 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     vscode.postMessage({ type: "addRow" });
   });
 
+  // ── Switch to text editor ──
+  document.getElementById("switchEditor").addEventListener("click", () => {
+    vscode.postMessage({ type: "openAsText" });
+  });
+
   // ── Save ──
   const saveBtn = document.getElementById("saveBtn");
   saveBtn.addEventListener("click", () => {
@@ -642,6 +661,15 @@ export function activate(context: vscode.ExtensionContext) {
       new EnvTableEditorProvider(context),
       { supportsMultipleEditorsPerDocument: false }
     )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("envshield.openAsTable", () => {
+      vscode.commands.executeCommand(
+        "workbench.action.reopenWithEditor",
+        "envshield.envTable"
+      );
+    })
   );
 }
 

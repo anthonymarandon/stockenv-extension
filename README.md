@@ -76,6 +76,9 @@ Surrounding quotes (`"` or `'`) are stripped from the display and restored autom
 - **+ Add Variable** creates a new row at the end of the file
 - Hover a row to reveal the **x** button to delete it
 
+### Switch between views
+A **Text Editor** button in the toolbar lets you switch to the standard VS Code text editor to see comments, sections, and raw file content. Use the command palette to switch back to the table view.
+
 ### Save button
 A **Save** button in the toolbar lets you save without keyboard shortcuts. It shows a brief confirmation after saving.
 
@@ -105,7 +108,9 @@ StockEnv activates on all files matching these patterns:
 5. Edit cells directly by clicking on them
 6. Click **Save** to write changes to disk
 
-To switch back to the raw text editor: right-click the file tab → **Open With...** → **Text Editor**.
+To switch between views:
+- **Table → Text**: click the **Text Editor** button in the toolbar
+- **Text → Table**: open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → **StockEnv: Open as Table**
 
 ---
 
