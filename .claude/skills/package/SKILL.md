@@ -1,6 +1,6 @@
 ---
 name: package
-description: Build the .vsix extension package and place it in the builds/ folder
+description: Build the VS Code extension into a .vsix package and output it to the builds/ folder for local distribution or installation. Use when the user wants to package, build, or export the extension, or runs /package.
 ---
 
 # Package Extension

@@ -1,8 +1,6 @@
 ---
 name: commit
-description: Create a structured git commit with categorized changes per file
-disable-model-invocation: true
-argument-hint: optional message override
+description: Create a well-organized git commit in English with changes categorized by file and scope, using conventional commit prefixes. Use when the user asks to commit, save changes, or run /commit.
 ---
 
 # Structured Commit

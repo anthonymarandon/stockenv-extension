@@ -1,7 +1,6 @@
 ---
 name: update-docs
-description: Update README.md and CHANGELOG.md when extension features are modified
-user-invocable: false
+description: Keep project documentation in sync by updating README.md and CHANGELOG.md whenever user-facing features are added, changed, or removed. Use when the user modifies extension behavior and needs docs refreshed, or runs /update-docs.
 ---
 
 # Update Documentation After Feature Changes
