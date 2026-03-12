@@ -4,6 +4,11 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.0.7] - 2026
+
+### Changed
+- All UI icons replaced with inline Lucide SVGs for a consistent, professional look — no more emojis in the interface
+
 ## [0.0.6] - 2026
 
 ### Added

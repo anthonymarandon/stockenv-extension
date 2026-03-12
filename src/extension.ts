@@ -6,6 +6,17 @@ const MASK = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
 const IC_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>';
 const IC_UP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
 const IC_DOWN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+const IC_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const IC_LOCK_OPEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+const IC_LOCK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+const IC_EYE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>';
+const IC_PLUS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+const IC_FILE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/></svg>';
+const IC_TABLE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>';
+const IC_FILE_TEXT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
+const IC_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const IC_SAVE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>';
+const IC_EYE_OFF = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>';
 
 interface EnvEntry {
   type: "pair";
@@ -377,8 +388,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
                 <button class="btn-section-down" data-index="${i}" title="Move section down">${IC_DOWN}</button>
               </td>
               <td class="cell-actions">
-                <button class="btn-section-add" data-index="${i}" title="Add variable">+</button>
-                <button class="btn-delete" data-index="${i}" title="Delete">&#x2715;</button>
+                <button class="btn-section-add" data-index="${i}" title="Add variable">${IC_PLUS}</button>
+                <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
               </td>
             </tr>`;
           }
@@ -396,12 +407,12 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           </td>
           <td class="cell-reveal">
             <button class="btn-reveal" data-index="${i}" title="Reveal this value">
-              <span class="reveal-icon">&#x1F512;</span>
+              <span class="reveal-icon">${IC_LOCK}</span>
             </button>
           </td>
           <td class="cell-actions">
             <button class="btn-move" data-index="${i}" title="Move to section">${IC_EDIT}</button>
-            <button class="btn-delete" data-index="${i}" title="Delete">&#x2715;</button>
+            <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
           </td>
         </tr>`;
       })
@@ -420,8 +431,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
               <span class="line-actions">
                 <button class="btn-section-up" data-index="${i}" title="Move section up">${IC_UP}</button>
                 <button class="btn-section-down" data-index="${i}" title="Move section down">${IC_DOWN}</button>
-                <button class="btn-section-add" data-index="${i}" title="Add variable">+</button>
-                <button class="btn-delete" data-index="${i}" title="Delete">&#x2715;</button>
+                <button class="btn-section-add" data-index="${i}" title="Add variable">${IC_PLUS}</button>
+                <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
               </span>
             </div>`;
           }
@@ -435,10 +446,10 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           <span class="text-key" data-field="key" data-index="${i}">${escapeHtml(pair.key)}</span><span class="text-eq">=</span><span class="text-value" data-field="value" data-index="${i}"><span class="real-value">${escapeHtml(pair.value)}</span><span class="masked-value">${MASK}</span></span>
           <span class="line-actions">
             <button class="btn-reveal" data-index="${i}" title="Reveal this value">
-              <span class="reveal-icon">&#x1F512;</span>
+              <span class="reveal-icon">${IC_LOCK}</span>
             </button>
             <button class="btn-move" data-index="${i}" title="Move to section">${IC_EDIT}</button>
-            <button class="btn-delete" data-index="${i}" title="Delete">&#x2715;</button>
+            <button class="btn-delete" data-index="${i}" title="Delete">${IC_TRASH}</button>
           </span>
         </div>`;
       })
@@ -989,24 +1000,24 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
 
   <div class="toolbar">
     <button class="toggle-btn hidden-state" id="toggleKeys">
-      <span class="icon">&#x1F6AB;</span>
+      <span class="icon">${IC_EYE_OFF}</span>
       <span class="label" id="keysLabel">Keys masked</span>
     </button>
     <div class="separator"></div>
     <button class="toggle-btn hidden-state" id="toggleValues">
-      <span class="icon">&#x1F512;</span>
+      <span class="icon">${IC_LOCK}</span>
       <span class="label" id="valuesLabel">Values masked</span>
     </button>
-    <button class="add-btn" id="addSection">+ Add Section</button>
-    <button class="add-btn" id="addRow">+ Add Variable</button>
-    <button class="save-btn" id="saveBtn">&#x1F4BE; Save</button>
+    <button class="add-btn" id="addSection">${IC_PLUS} Add Section</button>
+    <button class="add-btn" id="addRow">${IC_PLUS} Add Variable</button>
+    <button class="save-btn" id="saveBtn">${IC_SAVE} Save</button>
     <div class="separator"></div>
     <button class="toggle-btn switch-btn" id="switchEditor" title="Switch to text editor">
-      <span class="icon">&#x1F4DD;</span>
+      <span class="icon">${IC_FILE_TEXT}</span>
       <span class="label">Text Editor</span>
     </button>
     <button class="toggle-btn switch-btn" id="openRawFile" title="Open in VS Code default editor">
-      <span class="icon">&#x1F4C4;</span>
+      <span class="icon">${IC_FILE}</span>
       <span class="label">Raw File</span>
     </button>
   </div>
@@ -1045,6 +1056,16 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   const IC_EDIT = '${IC_EDIT}';
   const IC_UP = '${IC_UP}';
   const IC_DOWN = '${IC_DOWN}';
+  const IC_PLUS = '${IC_PLUS}';
+  const IC_TABLE = '${IC_TABLE}';
+  const IC_FILE_TEXT = '${IC_FILE_TEXT}';
+  const IC_CHECK = '${IC_CHECK}';
+  const IC_SAVE = '${IC_SAVE}';
+  const IC_TRASH = '${IC_TRASH}';
+  const IC_LOCK_OPEN = '${IC_LOCK_OPEN}';
+  const IC_LOCK = '${IC_LOCK}';
+  const IC_EYE = '${IC_EYE}';
+  const IC_EYE_OFF = '${IC_EYE_OFF}';
 
   let keysHidden = true;
   let valuesHidden = true;
@@ -1060,12 +1081,12 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     const icon = btn.querySelector(".icon");
     if (keysHidden) {
       label.textContent = "Keys masked";
-      icon.innerHTML = "&#x1F6AB;";
+      icon.innerHTML = IC_EYE_OFF;
       btn.classList.remove("active");
       btn.classList.add("hidden-state");
     } else {
       label.textContent = "Keys visible";
-      icon.innerHTML = "&#x1F441;";
+      icon.innerHTML = IC_EYE;
       btn.classList.remove("hidden-state");
       btn.classList.add("active");
     }
@@ -1085,12 +1106,12 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     const icon = btn.querySelector(".icon");
     if (valuesHidden) {
       label.textContent = "Values masked";
-      icon.innerHTML = "&#x1F512;";
+      icon.innerHTML = IC_LOCK;
       btn.classList.remove("active");
       btn.classList.add("hidden-state");
     } else {
       label.textContent = "Values visible";
-      icon.innerHTML = "&#x1F513;";
+      icon.innerHTML = IC_LOCK_OPEN;
       btn.classList.remove("hidden-state");
       btn.classList.add("active");
     }
@@ -1102,9 +1123,9 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       const tr = btn.closest("tr");
       const icon = btn.querySelector(".reveal-icon");
       if (!valuesHidden || revealedRows.has(idx)) {
-        icon.innerHTML = "&#x1F513;";
+        icon.innerHTML = IC_LOCK_OPEN;
       } else {
-        icon.innerHTML = "&#x1F512;";
+        icon.innerHTML = IC_LOCK;
       }
     });
   }
@@ -1356,10 +1377,10 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     const icon = btn.querySelector(".icon");
     if (viewMode === "text") {
       label.textContent = "Table View";
-      icon.innerHTML = "&#x1F4CA;";
+      icon.innerHTML = IC_TABLE;
     } else {
       label.textContent = "Text Editor";
-      icon.innerHTML = "&#x1F4DD;";
+      icon.innerHTML = IC_FILE_TEXT;
     }
   });
 
@@ -1372,10 +1393,10 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   const saveBtn = document.getElementById("saveBtn");
   saveBtn.addEventListener("click", () => {
     vscode.postMessage({ type: "save" });
-    saveBtn.textContent = "\\u2705 Saved";
+    saveBtn.innerHTML = IC_CHECK + " Saved";
     saveBtn.classList.add("saved");
     setTimeout(() => {
-      saveBtn.innerHTML = "&#x1F4BE; Save";
+      saveBtn.innerHTML = IC_SAVE + " Save";
       saveBtn.classList.remove("saved");
     }, 1500);
   });
@@ -1413,8 +1434,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
                 <button class="btn-section-down" data-index="\${i}" title="Move section down">\${IC_DOWN}</button>
               </td>
               <td class="cell-actions">
-                <button class="btn-section-add" data-index="\${i}" title="Add variable">+</button>
-                <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
+                <button class="btn-section-add" data-index="\${i}" title="Add variable">${IC_PLUS}</button>
+                <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
               </td>
             </tr>\`;
           }
@@ -1432,12 +1453,12 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           </td>
           <td class="cell-reveal">
             <button class="btn-reveal" data-index="\${i}" title="Toggle this value">
-              <span class="reveal-icon">&#x1F512;</span>
+              <span class="reveal-icon">${IC_LOCK}</span>
             </button>
           </td>
           <td class="cell-actions">
             <button class="btn-move" data-index="\${i}" title="Move to section">\${IC_EDIT}</button>
-            <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
+            <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
           </td>
         </tr>\`;
       }).join("");
@@ -1456,8 +1477,8 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
               <span class="line-actions">
                 <button class="btn-section-up" data-index="\${i}" title="Move section up">\${IC_UP}</button>
                 <button class="btn-section-down" data-index="\${i}" title="Move section down">\${IC_DOWN}</button>
-                <button class="btn-section-add" data-index="\${i}" title="Add variable">+</button>
-                <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
+                <button class="btn-section-add" data-index="\${i}" title="Add variable">${IC_PLUS}</button>
+                <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
               </span>
             </div>\`;
           }
@@ -1471,10 +1492,10 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           <span class="text-key" data-field="key" data-index="\${i}">\${esc(line.key)}</span><span class="text-eq">=</span><span class="text-value" data-field="value" data-index="\${i}"><span class="real-value">\${esc(line.value)}</span><span class="masked-value">${MASK}</span></span>
           <span class="line-actions">
             <button class="btn-reveal" data-index="\${i}" title="Reveal this value">
-              <span class="reveal-icon">&#x1F512;</span>
+              <span class="reveal-icon">${IC_LOCK}</span>
             </button>
             <button class="btn-move" data-index="\${i}" title="Move to section">\${IC_EDIT}</button>
-            <button class="btn-delete" data-index="\${i}" title="Delete">&#x2715;</button>
+            <button class="btn-delete" data-index="\${i}" title="Delete">${IC_TRASH}</button>
           </span>
         </div>\`;
       }).join("");
