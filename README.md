@@ -72,12 +72,26 @@ Click on any key or value cell to edit it directly in the table. Press **Enter**
 
 Surrounding quotes (`"` or `'`) are stripped from the display and restored automatically when saving. You edit the actual value, not the syntax.
 
+### Sections
+Comments starting with `#` are detected as section headers. They appear with an accent color and bold text in both views.
+
+- **+ Add Section** in the toolbar opens a dialog to name the section, then creates it at the end of the file
+- Hover a section header to reveal a **+** button that adds a variable directly inside that section
+- Section names are editable inline — click to rename, press **Enter** to confirm
+- Hover a section header to reveal **up/down chevrons** to reorder sections
+
+### Multi-select & move
+Each variable row has a checkbox. Select one or more variables, then use the **Move to section** button in the selection bar to move them all at once. You can also hover a single row and click the pen icon to move just that variable. Works in both table and text views.
+
 ### Add & Delete
 - **+ Add Variable** creates a new row at the end of the file
+- **+** on a section header adds a variable inside that section
 - Hover a row to reveal the **x** button to delete it
 
 ### Switch between views
-A **Text Editor** button in the toolbar lets you switch to the standard VS Code text editor to see comments, sections, and raw file content. Use the command palette to switch back to the table view.
+A **Text Editor** button in the toolbar lets you switch to an integrated text view that displays the `.env` content as plain `KEY=VALUE` lines. All masking features remain active in both views: key blurring, value masking, per-row reveal, add, delete, and save. Click **Table View** to switch back.
+
+A **Raw File** button opens the file in VS Code's native text editor, bypassing the extension entirely. When you reopen the file later, the custom editor view is restored automatically.
 
 ### Save button
 A **Save** button in the toolbar lets you save without keyboard shortcuts. It shows a brief confirmation after saving.
@@ -110,7 +124,8 @@ StockEnv activates on all files matching these patterns:
 
 To switch between views:
 - **Table → Text**: click the **Text Editor** button in the toolbar
-- **Text → Table**: open the command palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → **StockEnv: Open as Table**
+- **Text → Table**: click the **Table View** button in the toolbar
+- **Raw file**: click the **Raw File** button to open in VS Code's default editor
 
 ---
 
