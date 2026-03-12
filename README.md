@@ -32,17 +32,27 @@ Click both toggle buttons to show keys and values. All lock icons switch to unlo
 
 ---
 
-## Reveal values only
+## Add a section
 
-Need to check a value without seeing which key it belongs to? Toggle values on while keeping keys blurred.
+Click **+ Add Section** in the toolbar to create a new section. A dialog appears where you can type the section name, then press **Enter** to confirm or **Escape** to cancel.
 
-![Keys masked, values visible](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/4.png)
+![Add Section dialog](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/4.png)
 
 ---
 
-## Per-row reveal
+## Text editor view
 
-Don't want to reveal all values at once? Click the lock icon on a single row to unmask only that value. All other rows stay hidden. Keys must be visible to know which row you're looking at.
+Click **Text Editor** in the toolbar to switch to an integrated text view. Variables are displayed as `KEY=VALUE` lines. All masking features remain active: key blurring, value masking, per-row reveal, add, delete, and save.
+
+![Text editor view](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/5.png)
+
+---
+
+## Raw file
+
+Click **Raw File** to open the `.env` file in VS Code's native text editor, bypassing the extension entirely. When you reopen the file later, the custom editor view is restored automatically.
+
+![Raw file in VS Code native editor](https://raw.githubusercontent.com/anthonymarandon/stockenv-extension/main/images/6.png)
 
 ---
 

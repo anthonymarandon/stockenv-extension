@@ -39,3 +39,12 @@ VS Code extension that replaces the default text editor for `.env` files with an
 - When adding/modifying features, update `README.md` and `CHANGELOG.md`
 - Never add external dependencies — the extension must remain zero-dependency
 - CSP must stay `default-src 'none'` — no external network requests allowed
+
+## Available Skills
+
+| Skill | Command | When to use |
+|---|---|---|
+| **update-docs** | `/update-docs` | After feature changes — updates README, CHANGELOG, bumps version, syncs lockfile, then commits |
+| **commit** | `/commit` | Create a structured git commit with changes grouped by file/scope |
+| **package** | `/package` | Build the `.vsix` package into `builds/` for local distribution |
+| **skill-creator** | `/skill-creator` | Scaffold a new skill with correct folder structure and frontmatter |

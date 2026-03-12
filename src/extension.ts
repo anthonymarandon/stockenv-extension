@@ -848,6 +848,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   .btn-reveal {
     background: none;
     border: 1px solid transparent;
+    color: var(--fg);
     cursor: pointer;
     font-size: 14px;
     padding: 2px 6px;
@@ -939,6 +940,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
   .text-line .btn-reveal {
     background: none;
     border: 1px solid transparent;
+    color: var(--fg);
     cursor: pointer;
     font-size: 14px;
     padding: 2px 6px;

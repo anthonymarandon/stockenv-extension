@@ -4,6 +4,15 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.0.8] - 2026
+
+### Fixed
+- SVG icons now use explicit foreground color (`var(--fg)`) so they remain visible across all VS Code themes (light, dark, high contrast)
+
+### Changed
+- README screenshots replaced with updated images covering all major views: full privacy, keys only, full reveal, add section dialog, text editor, and raw file
+- Removed "Reveal values only" and "Per-row reveal" showcase sections from README, replaced with "Add a section", "Text editor view", and "Raw file" sections
+
 ## [0.0.7] - 2026
 
 ### Changed
