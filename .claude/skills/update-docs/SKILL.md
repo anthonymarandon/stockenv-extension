@@ -29,7 +29,7 @@ Run `git diff HEAD` and `git diff --cached` to understand every change since the
 
 1. Read the current `CHANGELOG.md`
 2. Determine the new version number by incrementing the patch version from the latest entry (e.g. `0.0.7` → `0.0.8`)
-3. Add a new `## [X.Y.Z] - YYYY` entry at the top (below the file header), using the current year
+3. Add a new `## [X.Y.Z] - YYYY-MM-DD` entry at the top (below the file header), using today's full date
 4. Categorize changes using these headers:
    - `### Added` — new features
    - `### Changed` — modifications to existing features
