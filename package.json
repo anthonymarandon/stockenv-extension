@@ -1,0 +1,58 @@
+{
+  "name": "envshield",
+  "displayName": "EnvShield",
+  "description": "View and protect .env files as a table with per-column masking",
+  "version": "0.0.2",
+  "publisher": "anthonymarandon",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:dotenv",
+    "workspaceContains:**/.env*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "envshield.envTable",
+        "displayName": "EnvShield Table",
+        "selector": [
+          { "filenamePattern": ".env" },
+          { "filenamePattern": ".env.*" }
+        ],
+        "priority": "default"
+      }
+    ],
+    "languages": [
+      {
+        "id": "dotenv",
+        "aliases": ["dotenv", "env"],
+        "filenames": [
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.staging",
+          ".env.test",
+          ".env.example"
+        ],
+        "filenamePatterns": [
+          ".env*"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
