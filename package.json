@@ -1,14 +1,30 @@
 {
   "name": "stockenv",
   "displayName": "StockEnv",
-  "description": "View and protect .env files as a table with per-column masking",
+  "description": "View and protect .env files as a table with per-column masking. Hide keys and values independently, reveal individual rows, edit inline.",
   "version": "0.0.2",
-  "publisher": "anthonymarandon",
+  "publisher": "AnthonyDev18",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthonymarandon/stockenv-extension"
+  },
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "env",
+    "dotenv",
+    "environment",
+    "secrets",
+    "mask",
+    "hide",
+    "table"
   ],
   "activationEvents": [
     "onLanguage:dotenv",
@@ -19,7 +35,7 @@
     "customEditors": [
       {
         "viewType": "envshield.envTable",
-        "displayName": "EnvShield Table",
+        "displayName": "StockEnv Table",
         "selector": [
           { "filenamePattern": ".env" },
           { "filenamePattern": ".env.*" }
@@ -49,10 +65,12 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
     "typescript": "^5.3.0"
   }
 }
