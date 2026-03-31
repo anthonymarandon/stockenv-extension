@@ -4,6 +4,11 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.2] - 2026-03-31
+
+### Fixed
+- Empty values could not be edited — typing in a revealed empty cell was silently discarded on save due to the cursor escaping the empty `real-value` span in contenteditable mode
+
 ## [1.0.1] - 2026-03-12
 
 ### Changed

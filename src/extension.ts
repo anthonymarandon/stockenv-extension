@@ -1428,13 +1428,22 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         if (field === "key" && keysHidden && !isRevealed) { cell.blur(); return; }
         if (field === "value" && valuesHidden && !isRevealed) { cell.blur(); return; }
 
-        // When editing value, work with real-value span
-        if (cell.dataset.field === "value") {
+        // When editing value, hide spans and work with plain text
+        if (field === "value") {
           const realSpan = cell.querySelector(".real-value");
-          if (realSpan) {
-            // Select the text in the real-value span
+          const maskedSpan = cell.querySelector(".masked-value");
+          const currentValue = realSpan ? realSpan.textContent : "";
+          // Replace spans with plain text for clean editing
+          if (maskedSpan) maskedSpan.style.display = "none";
+          if (realSpan) realSpan.style.display = "none";
+          // Add a text node if there isn't one already (for empty values)
+          if (!cell.dataset.editing) {
+            cell.dataset.editing = "true";
+            const textNode = document.createTextNode(currentValue);
+            cell.appendChild(textNode);
+            // Select all text
             const range = document.createRange();
-            range.selectNodeContents(realSpan);
+            range.selectNodeContents(cell);
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(range);
@@ -1447,8 +1456,23 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
         const index = parseInt(cell.dataset.index);
         let value;
         if (field === "value") {
+          // Read the plain text the user typed (ignoring hidden spans)
           const realSpan = cell.querySelector(".real-value");
-          value = realSpan ? realSpan.textContent : cell.textContent;
+          const maskedSpan = cell.querySelector(".masked-value");
+          let raw = "";
+          cell.childNodes.forEach(n => {
+            if (n === realSpan || n === maskedSpan) return;
+            raw += n.textContent;
+          });
+          value = raw;
+          // Restore span structure
+          if (realSpan) { realSpan.textContent = value; realSpan.style.display = ""; }
+          if (maskedSpan) maskedSpan.style.display = "";
+          // Remove orphan text nodes
+          Array.from(cell.childNodes).forEach(n => {
+            if (n.nodeType === Node.TEXT_NODE) cell.removeChild(n);
+          });
+          delete cell.dataset.editing;
         } else {
           value = cell.textContent.toUpperCase();
           cell.textContent = value;
