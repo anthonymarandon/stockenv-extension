@@ -4,6 +4,12 @@ All notable changes to the StockEnv extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.3] - 2026-03-31
+
+### Fixed
+- Editing long keys or values corrupted the `.env` file — `contenteditable` silently injected newlines (`<br>`, `<div>`) into the value, which split a single entry across multiple lines and produced orphan quotes
+- Pasting multiline text into a key, value, or section name no longer breaks the file — paste events are intercepted, stripped of line breaks, and inserted as plain text via the Selection API
+
 ## [1.0.2] - 2026-03-31
 
 ### Fixed

@@ -1464,7 +1464,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
             if (n === realSpan || n === maskedSpan) return;
             raw += n.textContent;
           });
-          value = raw;
+          value = raw.replace(/[\\r\\n]/g, "");
           // Restore span structure
           if (realSpan) { realSpan.textContent = value; realSpan.style.display = ""; }
           if (maskedSpan) maskedSpan.style.display = "";
@@ -1474,7 +1474,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
           });
           delete cell.dataset.editing;
         } else {
-          value = cell.textContent.toUpperCase();
+          value = cell.textContent.replace(/[\\r\\n]/g, "").toUpperCase();
           cell.textContent = value;
         }
         vscode.postMessage({ type: "edit", lineIndex: index, field, value });
@@ -1483,6 +1483,17 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       cell.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); cell.blur(); }
         if (e.key === "Escape") { cell.blur(); }
+      });
+
+      cell.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/[\\r\\n]/g, "");
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(text));
+        range.collapse(false);
       });
     });
   }
@@ -1565,7 +1576,7 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
     document.querySelectorAll(".section-name, .text-section-name").forEach(cell => {
       cell.addEventListener("blur", () => {
         const index = parseInt(cell.dataset.index);
-        let val = cell.textContent.trim();
+        let val = cell.textContent.replace(/[\\r\\n]/g, "").trim();
         // Ensure section headers always keep the # prefix
         if (!val.startsWith("#")) {
           val = "# " + val;
@@ -1576,6 +1587,16 @@ class EnvTableEditorProvider implements vscode.CustomTextEditorProvider {
       cell.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); cell.blur(); }
         if (e.key === "Escape") { cell.blur(); }
+      });
+      cell.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/[\\r\\n]/g, "");
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(text));
+        range.collapse(false);
       });
     });
   }
